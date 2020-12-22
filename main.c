@@ -50,7 +50,7 @@ planta_t * crearPlanta(int delimitador,int nPlazas){
 	int i;
 	
 	planta_t * plantaAux = malloc(sizeof(planta_t));
-	plantaAux->plazas = malloc(sizeof(vehiculo_t)); //ESTO NO VA
+	plantaAux->plazas = malloc(sizeof(vehiculo_t*) * nPlazas); //ESTO NO VA
 	//Inicializamos vehiculos a NULL
 	for(i = 0;i<nPlazas;i++){
 		
@@ -86,6 +86,8 @@ typedef struct parking //nombre estructura
 parking_t * crearParking(int nPlazas ,int nPlantas, int nCoches, int nCamiones){
 	
 	parking_t * parkingAux = malloc(sizeof(parking_t));
+    parkingAux->plantas = malloc(sizeof(planta_t) * nPlantas);
+    // tenenmos n punteros de plantas
 	int i;
 	float pCamiones = (float) nCamiones/(float) ((float) nCoches + (float) nCamiones); //Tanto por 1 de Camiones
 	int delimitador = (pCamiones*nPlazas); //Plazas asignadas camiones
@@ -101,12 +103,9 @@ parking_t * crearParking(int nPlazas ,int nPlantas, int nCoches, int nCamiones){
 	
 	parkingAux->nPlantas = nPlantas;
 	
-	for(i = 0; i<nPlantas;i++){
-		
+	for(i = 0; i<nPlantas;i++)
 		parkingAux->plantas[i] = crearPlanta(delimitador,nPlazas);
-		
-	}
-	
+	printf("el valor de i es %i", i);
 	return parkingAux;
 
 }
