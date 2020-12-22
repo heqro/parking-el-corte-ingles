@@ -9,36 +9,85 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-typedef struct vehiculo //nombre estructura
+typedef struct elemento
 {
-	
-	int espacio; //1 si es coche 2 si es camion
-	char* id; //String con la matricula del vehiculo
-	
-} vehiculo_t; //tipo dato estructura
+    int espacio; // 1 -> coche; 2 -> camión
+    char* id; // matrícula vehículo
+} elem_t;
 
-vehiculo_t * crearVehiculo(int espacio, char *id){
-	
-	vehiculo_t * vehiculoAux = malloc(sizeof(vehiculo_t));
-	vehiculoAux->id = malloc(10*sizeof(char)); //10 porque son "matriculas" y no necesitamos mas
-	vehiculoAux->espacio = espacio;
-	vehiculoAux->id = strcpy(vehiculoAux->id, id);
-    
-	return vehiculoAux;
+elem_t* crearElem(int espacio, char* id){
+    elem_t* aux = malloc(sizeof(elem_t));
+    aux->id = malloc(10*sizeof(char)); //10 porque son "matriculas" y no necesitamos mas
+	aux->espacio = espacio;
+	aux->id = strcpy(aux->id, id);
+    return aux;
 }
-void mostrarVehiculo(vehiculo_t * vehiculoAux){
-	
-	if(vehiculoAux==NULL){
-		printf("[0]");
-	}else{
-		printf("[%s]",vehiculoAux->id);
-	}
+
+void asignarElem(elem_t* elem1, elem_t elem2){
+    elem1 = crearElem(elem2.espacio, elem2.id);
+}
+
+void mostrarElem(elem_t elem){
+	printf("[%s]",elem.id);
+}
+
+typedef struct nodo
+{
+    elem_t elem;
+    struct nodo* sig;
+    //int cabreo;
+} nodo_t;
+
+typedef struct cola
+{
+    nodo_t* primero;
+    nodo_t* ultimo;
+} cola_t;
+
+void crearColaVacia(cola_t* cola){
+    cola->primero = NULL;
+    cola->ultimo = NULL;
+}
+
+int esColaVacia(cola_t cola){
+    return cola.primero == NULL;
+}
+
+void insertar(elem_t elem, cola_t* cola){
+    nodo_t* nuevoNodo = malloc(sizeof(nodo_t));
+    nuevoNodo->sig = NULL;
+    asignarElem(&nuevoNodo->elem, elem);
+    if(esColaVacia(*cola)){
+        cola->primero = nuevoNodo;
+        cola->ultimo = nuevoNodo;
+    } else {
+        cola->ultimo->sig = nuevoNodo;
+        cola->ultimo = nuevoNodo;
+    }
+}
+
+elem_t* getPrimero(cola_t cola){ // recibir REFERENCIA primer elemento
+    if(!esColaVacia(cola))
+        return &cola.primero->elem;
+    return NULL;
+}
+
+void eliminarCabecera(cola_t* cola){
+    nodo_t* ptrAux;
+    if(!esColaVacia(*cola)){
+        ptrAux = cola->primero;
+        if(cola->primero == cola->ultimo) // solo hay un elemento
+            crearColaVacia(cola);
+        else
+            cola->primero = cola->primero->sig;
+        free(ptrAux);
+    }
 }
 
 typedef struct planta //nombre estructura
 {
 		
-		vehiculo_t** plazas; //Vehiculos por planta
+		elem_t** plazas; //Vehiculos por planta
 		int delimitador; //Delimita coches y camiones
 		int nPlazas; //Plazas libres
 		int topePlazas; //Total de plazas
@@ -50,7 +99,7 @@ planta_t * crearPlanta(int delimitador,int nPlazas){
 	int i;
 	
 	planta_t * plantaAux = malloc(sizeof(planta_t));
-	plantaAux->plazas = malloc(sizeof(vehiculo_t*) * nPlazas); //ESTO NO VA
+	plantaAux->plazas = malloc(sizeof(elem_t*) * nPlazas); //ESTO NO VA
 	//Inicializamos vehiculos a NULL
 	for(i = 0;i<nPlazas;i++){
 		
@@ -61,15 +110,17 @@ planta_t * crearPlanta(int delimitador,int nPlazas){
 	plantaAux->delimitador=delimitador;
 	plantaAux->nPlazas=nPlazas;
 	plantaAux->topePlazas=nPlazas;
-	
-	fprintf(stderr,"E1\n");
 	return plantaAux;
 }
 void mostrarPlanta(planta_t * plantaAux){
 	
 	int i;
 	for(i=0; i<plantaAux->topePlazas;i++){
-		mostrarVehiculo(plantaAux->plazas[i]);
+		if(plantaAux->plazas[i]){
+            mostrarElem(*plantaAux->plazas[i]);
+        } else {
+            printf("[ ]");
+        }
 	}	
 	
 }
@@ -105,18 +156,17 @@ parking_t * crearParking(int nPlazas ,int nPlantas, int nCoches, int nCamiones){
 	
 	for(i = 0; i<nPlantas;i++)
 		parkingAux->plantas[i] = crearPlanta(delimitador,nPlazas);
-	printf("el valor de i es %i", i);
 	return parkingAux;
 
 }
-void mostrarParking(parking_t * parkingAux){
+void mostrarParking(parking_t parkingAux){
 	
 	int i;
 	
 	printf("Parking :\n");
-	for(i=parkingAux->nPlantas-1; i>=0;i--){
+	for(i=parkingAux.nPlantas-1; i>=0;i--){
 		printf("Planta %i",i);
-		mostrarPlanta(parkingAux->plantas[i]);
+		mostrarPlanta(parkingAux.plantas[i]);
 		printf("\n");
 	}	
 	
@@ -169,7 +219,7 @@ int main(int argc, char **argv)
 	}
 	fprintf(stderr,"nPlazas %i,nPlantas %i,nCoches %i,nCamiones %i\n",nPlazas,nPlantas,nCoches,nCamiones);
 	aparcamiento = crearParking(nPlazas,nPlantas,nCoches,nCamiones);
-	
+	mostrarParking(*aparcamiento);
 	//crearParking(nCoches,nCamiones,nPlazas,nPlantas);
 	
 	//mutex
