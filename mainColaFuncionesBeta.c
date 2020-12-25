@@ -265,24 +265,24 @@ int main(int argc, char **argv)
 				exit(2);
 		
 		case 5: nCamiones = strtol(argv[4], &ptrError, 0);
-				if(ptrError == argv[4] || nCamiones < 0){
+				if(*ptrError != '\0' || nCamiones < 0){
 					fprintf(stderr,"Error: No es el formato correcto. \n");
 					exit(1);
 				}
 		case 4: nCoches = strtol(argv[3], &ptrError, 0);
-				if(ptrError == argv[3] || nCoches < 0){
+				if(*ptrError != '\0' || nCoches < 0){
 					fprintf(stderr,"Error: No es el formato correcto. \n");
 					exit(1);
 				}
 				
 		case 3: nPlantas = strtol(argv[2], &ptrError, 0);
-				if(ptrError == argv[2] || nPlantas < 0){
+				if(*ptrError != '\0' || nPlantas < 0){
 					fprintf(stderr,"Error: No es el formato correcto. \n");
 					exit(1);				
 				}
 				
 		case 2: nPlazas = strtol(argv[1], &ptrError, 0);
-				if(ptrError == argv[1] || nPlazas < 0){
+				if(*ptrError != '\0' || nPlazas < 0){
 					fprintf(stderr,"Error: No es el formato correcto. \n");
 					exit(1);
 				}
