@@ -262,17 +262,17 @@ int main(int argc, char **argv)
     char* ptrError;
 	switch(argc){ //Filto entrada
 		case 1: fprintf(stderr,"Error: No hay parametros suficientes. \n");
-				exit(1);
+				exit(2);
 		
 		case 5: nCamiones = strtol(argv[4], &ptrError, 0);
 				if(ptrError == argv[4] || nCamiones < 0){
 					fprintf(stderr,"Error: No es el formato correcto. \n");
-					exit(1);				
+					exit(1);
 				}
 		case 4: nCoches = strtol(argv[3], &ptrError, 0);
 				if(ptrError == argv[3] || nCoches < 0){
 					fprintf(stderr,"Error: No es el formato correcto. \n");
-					exit(1);				
+					exit(1);
 				}
 				
 		case 3: nPlantas = strtol(argv[2], &ptrError, 0);
@@ -284,14 +284,20 @@ int main(int argc, char **argv)
 		case 2: nPlazas = strtol(argv[1], &ptrError, 0);
 				if(ptrError == argv[1] || nPlazas < 0){
 					fprintf(stderr,"Error: No es el formato correcto. \n");
-					exit(1);				
+					exit(1);
 				}
+				
+				if(nPlazas == 1 && nCamiones > 0){
+                    fprintf(stderr, "Error: con estos datos, no se admitirán camiones. \n");
+                    exit(3);
+                }
+				
 				if(argc==2 || argc==3)
 					nCoches=2*nPlazas*nPlantas;
 				break;
 				
 		default: fprintf(stderr,"Error: Hay mas parametros de los necesarios. \n"); 
-				 exit(1);
+				 exit(2);
 	}
 	aparcamiento = crearParking(nPlazas,nPlantas);
     crearColaVacia(&colaEntrada);
