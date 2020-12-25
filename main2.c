@@ -90,8 +90,8 @@ typedef struct planta //nombre estructura
 {
 		
 		elem_t** plazas; //Vehiculos por planta
-		int nPlazas; //Plazas libres
-		int topePlazas; //Total de plazas
+		int nPlazas; // total de plazas por planta
+		//int topePlazas; //Total de plazas
 			
 } planta_t; //tipo dato estructura
 
@@ -109,13 +109,13 @@ planta_t * crearPlanta(int nPlazas){
 	}
 	
 	plantaAux->nPlazas=nPlazas;
-	plantaAux->topePlazas=nPlazas;
+	//plantaAux->topePlazas=nPlazas;
 	return plantaAux;
 }
 void mostrarPlanta(planta_t * plantaAux){
 	
 	int i;
-	for(i=0; i<plantaAux->topePlazas;i++){
+	for(i = 0; i < plantaAux->nPlazas; i++){
 		if(plantaAux->plazas[i]){
             mostrarElem(*plantaAux->plazas[i]);
         } else {
@@ -162,24 +162,25 @@ void mostrarParking(parking_t parkingAux){
 int encontrarPlazaLibre(volatile parking_t * parkingAux, int flag, int * plantaparking, int * plazaparking ){ //1 coche 2 camion
 	
 	int i,j;
-	
 	for(i=0;i<parkingAux->nPlantas;i++){
-		for(j=0; j< (parkingAux->plantas[i]->nPlazas);j++){
+		for(j = 0; j < (parkingAux->plantas[i]->nPlazas - 1);j++){
 			if(parkingAux->plantas[i]->plazas[j]==NULL){
 				if(flag == 1){
 					*plantaparking = i;
 					*plazaparking = j;
-					fprintf(stderr,"i : %i j : %i \n",*plantaparking,*plazaparking);
 					return 1;
-				}else if(j+1<=parkingAux->plantas[i]->nPlazas && parkingAux->plantas[i]->plazas[j+1] == NULL){
-					
+				}else if(parkingAux->plantas[i]->plazas[j+1] == NULL){
 					*plantaparking = i;
 					*plazaparking = j;
-					fprintf(stderr,"i : %i j : %i \n",*plantaparking,*plazaparking);
 					return 1;
 				}
 			}
 		}
+		if(parkingAux->plantas[i]->plazas[j] == NULL && flag == 1){
+            *plantaparking = i;
+            *plazaparking = j;
+            return 1;
+        }
 	}
 	
 	return 0;
@@ -233,14 +234,13 @@ void * accesoParkingCamiones(void * id){
 		sleep(rand() % 10 + 1);
 		pthread_mutex_lock(&mutex);
 		while(encontrarPlazaLibre(aparcamiento,2,plantaparking,plazaparking)==0){
-			//fprintf(stderr,"E4\n");
             pthread_cond_wait(&out,&mutex);
 		} //ya tiene acceso al mutex
 		printf("Entrada Camion %i aparca en Planta %i y Plaza %i ",camion->id,*plantaparking,*plazaparking);
+        aparcamiento->plazasLibres = aparcamiento->plazasLibres - 2;
 		printf("Plazas libres: %i\n", aparcamiento->plazasLibres);
 		aparcamiento->plantas[*plantaparking]->plazas[*plazaparking] = camion;
 		aparcamiento->plantas[*plantaparking]->plazas[(*plazaparking) + 1] = camion;
-		aparcamiento->plazasLibres = aparcamiento->plazasLibres - 2;
 		mostrarParking(*aparcamiento);
 		pthread_mutex_unlock(&mutex);
 		
