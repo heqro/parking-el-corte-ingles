@@ -197,10 +197,10 @@ void * accesoParkingCoches(void * id){
 	plantaparking = malloc(sizeof(int));	
 	
 	while(1){
-		
+		sleep(rand() % 10 + 1);
 		pthread_mutex_lock(&mutex);
 		while(encontrarPlazaLibre(aparcamiento,1,plantaparking,plazaparking)==0){
-		//	pthread_cond_wait(&out,&mutex);
+            pthread_cond_wait(&out,&mutex);
 		} //ya tiene acceso al mutex
 		printf("Entrada Coche %i aparca en Planta %i y Plaza %i. ",coche->id,*plantaparking,*plazaparking);
 		aparcamiento->plantas[*plantaparking]->plazas[*plazaparking] = coche;
@@ -214,9 +214,9 @@ void * accesoParkingCoches(void * id){
 		pthread_mutex_lock(&mutex);
 		aparcamiento->plantas[*plantaparking]->plazas[*plazaparking] = NULL;
 		printf("Salida Coche %i aparca en Planta %i y Plaza %i. ",coche->id,*plantaparking,*plazaparking);
+        aparcamiento->plazasLibres = aparcamiento->plazasLibres + 1;
 		printf("Plazas libres: %i\n", aparcamiento->plazasLibres);
-		aparcamiento->plazasLibres = aparcamiento->plazasLibres + 1;
-		//pthread_cond_signal(&out);
+		pthread_cond_signal(&out);
 		pthread_mutex_unlock(&mutex);
 	}
 }
@@ -230,11 +230,11 @@ void * accesoParkingCamiones(void * id){
 	plantaparking = malloc(sizeof(int));	
 			
 	while(1){
-		
+		sleep(rand() % 10 + 1);
 		pthread_mutex_lock(&mutex);
 		while(encontrarPlazaLibre(aparcamiento,2,plantaparking,plazaparking)==0){
-			fprintf(stderr,"E4\n");
-	//		pthread_cond_wait(&out,&mutex);
+			//fprintf(stderr,"E4\n");
+            pthread_cond_wait(&out,&mutex);
 		} //ya tiene acceso al mutex
 		printf("Entrada Camion %i aparca en Planta %i y Plaza %i ",camion->id,*plantaparking,*plazaparking);
 		printf("Plazas libres: %i\n", aparcamiento->plazasLibres);
@@ -250,9 +250,9 @@ void * accesoParkingCamiones(void * id){
 		aparcamiento->plantas[*plantaparking]->plazas[*plazaparking] = NULL;
 		aparcamiento->plantas[*plantaparking]->plazas[*plazaparking + 1] = NULL;
 		printf("Salida Camion %i aparca en Planta %i y Plaza %i. ",camion->id,*plantaparking,*plazaparking);
+        aparcamiento->plazasLibres = aparcamiento->plazasLibres + 2;
 		printf("Plazas libres: %i\n", aparcamiento->plazasLibres);
-		aparcamiento->plazasLibres = aparcamiento->plazasLibres + 2;
-	//	pthread_cond_signal(&out);
+        pthread_cond_signal(&out);
 		pthread_mutex_unlock(&mutex);
 		
 	}
@@ -327,7 +327,6 @@ int main(int argc, char **argv)
 		idCoches[i] = i;	
 		thCoches[i] = malloc(sizeof(pthread_t));
 		pthread_create(thCoches[i],NULL,accesoParkingCoches,(void *)&idCoches[i]);
-		fprintf(stderr,"E2\n");
 		
 	}
 	
@@ -335,23 +334,9 @@ int main(int argc, char **argv)
 		idCamiones[j] = j+nCoches;	
 		thCamiones[j] = malloc(sizeof(pthread_t));
 		pthread_create(thCamiones[j],NULL,accesoParkingCamiones,(void *)&idCamiones[j]);
-		fprintf(stderr,"E3\n");
 	}
 	 
 	while(1);
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	return 0;
 }
 
