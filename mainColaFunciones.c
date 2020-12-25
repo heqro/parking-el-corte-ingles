@@ -35,7 +35,6 @@ typedef struct nodo
 {
     elem_t elem;
     struct nodo* sig;
-    //int cabreo;
 } nodo_t;
 
 typedef struct cola
@@ -212,7 +211,8 @@ void * accesoParking(void * elemento){
         pthread_mutex_lock(&mutexCola);
         insertar(*vehiculo, &colaEntrada);
         pthread_mutex_unlock(&mutexCola);
-        while(!soyPrimero(*vehiculo, colaEntrada)); // esperar el turno
+        while(!soyPrimero(*vehiculo, colaEntrada)){} // esperar el turno
+        
         // una vez somos primeros, es hora de buscar plaza
 		pthread_mutex_lock(&mutexAparcamiento);
 		while(encontrarPlazaLibre(aparcamiento,vehiculo->espacio,plantaParking,plazaParking)==0){ // mientras no encontremos plaza
@@ -262,101 +262,7 @@ void * accesoParking(void * elemento){
 		pthread_cond_signal(&out);
         // una vez hemos realizado nuestras tareas, abandonamos el control del mutex
 		pthread_mutex_unlock(&mutexAparcamiento);
-	}
-    
-}
-
-void * accesoParkingCoches(void * id){
-	
-	elem_t * coche = crearElem(1,*((int *) id));
-	int * plazaparking;
-	int * plantaparking;
-	
-	plazaparking = malloc(sizeof(int));	
-	plantaparking = malloc(sizeof(int));	
-	
-	while(1){
-		sleep(rand() % 10 + 1);
-        // Insertarnos en la cola de espera
-        pthread_mutex_lock(&mutexCola);
-        insertar(*coche, &colaEntrada);
-        pthread_mutex_unlock(&mutexCola);
-        while(!soyPrimero(*coche, colaEntrada));
-        // Es nuestro turno, abandonamos la cola 
-        
-		pthread_mutex_lock(&mutexAparcamiento);
-		while(encontrarPlazaLibre(aparcamiento,1,plantaparking,plazaparking)==0){
-            pthread_cond_wait(&out,&mutexAparcamiento);
-		} // Si salimos de este bucle, hemos conseguido sitio
-		// Hemos encontrado un lugar, con lo que abandonamos la cola
-		pthread_mutex_lock(&mutexCola);
-        eliminarCabecera(&colaEntrada);
-        pthread_mutex_unlock(&mutexCola);
-        
-		printf("Entrada Coche %i aparca en Planta %i y Plaza %i. ",coche->id,*plantaparking,*plazaparking);
-		aparcamiento->plantas[*plantaparking]->plazas[*plazaparking] = coche;
-		aparcamiento->plazasLibres = aparcamiento->plazasLibres - 1;
-		printf("Plazas libres: %i\n", aparcamiento->plazasLibres);
-		mostrarParking(*aparcamiento);
-		pthread_mutex_unlock(&mutexAparcamiento);
-		
-		sleep(rand() % 10 + 1);
-		
-		pthread_mutex_lock(&mutexAparcamiento);
-		aparcamiento->plantas[*plantaparking]->plazas[*plazaparking] = NULL;
-		printf("Salida Coche %i aparca en Planta %i y Plaza %i. ",coche->id,*plantaparking,*plazaparking);
-        aparcamiento->plazasLibres = aparcamiento->plazasLibres + 1;
-		printf("Plazas libres: %i\n", aparcamiento->plazasLibres);
-		pthread_cond_signal(&out);
-		pthread_mutex_unlock(&mutexAparcamiento);
-	}
-}
-void * accesoParkingCamiones(void * id){
-	
-	elem_t * camion = crearElem(2,*((int *) id));
-	int * plazaparking;
-	int * plantaparking;
-	
-	plazaparking = malloc(sizeof(int));	
-	plantaparking = malloc(sizeof(int));	
-			
-	while(1){
-		sleep(rand() % 10 + 1);
-        // Insertarnos en la cola de espera
-        pthread_mutex_lock(&mutexCola);
-        insertar(*camion, &colaEntrada);
-        pthread_mutex_unlock(&mutexCola);
-        while(!soyPrimero(*camion, colaEntrada));
-        // Es nuestro turno, abandonamos la cola 
-		pthread_mutex_lock(&mutexAparcamiento);
-		while(encontrarPlazaLibre(aparcamiento,2,plantaparking,plazaparking)==0){
-            pthread_cond_wait(&out,&mutexAparcamiento);
-		} //ya tiene acceso al mutex
-		
-		pthread_mutex_lock(&mutexCola);
-        eliminarCabecera(&colaEntrada);
-        pthread_mutex_unlock(&mutexCola);
-		
-		printf("Entrada Camion %i aparca en Planta %i y Plaza %i ",camion->id,*plantaparking,*plazaparking);
-        aparcamiento->plazasLibres = aparcamiento->plazasLibres - 2;
-		printf("Plazas libres: %i\n", aparcamiento->plazasLibres);
-		aparcamiento->plantas[*plantaparking]->plazas[*plazaparking] = camion;
-		aparcamiento->plantas[*plantaparking]->plazas[(*plazaparking) + 1] = camion;
-		mostrarParking(*aparcamiento);
-		pthread_mutex_unlock(&mutexAparcamiento);
-		
-		sleep(rand() % 10 + 1);
-		
-		pthread_mutex_lock(&mutexAparcamiento);
-		aparcamiento->plantas[*plantaparking]->plazas[*plazaparking] = NULL;
-		aparcamiento->plantas[*plantaparking]->plazas[*plazaparking + 1] = NULL;
-		printf("Salida Camion %i aparca en Planta %i y Plaza %i. ",camion->id,*plantaparking,*plazaparking);
-        aparcamiento->plazasLibres = aparcamiento->plazasLibres + 2;
-		printf("Plazas libres: %i\n", aparcamiento->plazasLibres);
-        pthread_cond_signal(&out);
-		pthread_mutex_unlock(&mutexAparcamiento);
-		
-	}
+	}   
 }
 
 int main(int argc, char **argv)
@@ -426,7 +332,9 @@ int main(int argc, char **argv)
         pthread_create(thVehiculo[i], NULL, accesoParking, (void*) &vehiculos[i]);
     }
 	 
-	while(1);
+	while(1){
+		sleep(10);
+	}
 	return 0;
 }
 
