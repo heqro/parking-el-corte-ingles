@@ -2,13 +2,13 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <errno.h>
 
 pthread_mutex_t mutexAparcamiento;
 pthread_mutex_t mutexCola;
 pthread_cond_t out;
-//pthread_cond_t colaActualizada;
-typedef struct elemento
-{
+
+typedef struct elemento{
     int espacio; // 1 -> coche; 2 -> camión
     int id; // matrícula vehículo
 } elem_t;
@@ -33,14 +33,12 @@ int igualElem(elem_t elem1, elem_t elem2){
     return elem1.espacio == elem2.espacio && elem1.id == elem2.id;
 }
 
-typedef struct nodo
-{
+typedef struct nodo{
     elem_t elem;
     struct nodo* sig;
 } nodo_t;
 
-typedef struct cola
-{
+typedef struct cola{
     nodo_t* primero;
     nodo_t* ultimo;
 } cola_t;
@@ -94,51 +92,39 @@ void eliminarCabecera(volatile cola_t* cola){
     }
 }
 
-typedef struct planta //nombre estructura
-{
-		
+typedef struct planta { //nombre estructura
 		elem_t** plazas; //Vehiculos por planta
 		int nPlazas; // total de plazas por planta
-		//int topePlazas; //Total de plazas
-			
 } planta_t; //tipo dato estructura
 
 planta_t * crearPlanta(int nPlazas){
-	
 	int i;
-	
 	planta_t * plantaAux = malloc(sizeof(planta_t));
 	plantaAux->plazas = malloc(sizeof(elem_t*) * nPlazas); //ESTO NO VA
-	//Inicializamos vehiculos a NULL
-	for(i = 0;i<nPlazas;i++)
+	// Inicializamos vehiculos a NULL
+	for(i = 0; i < nPlazas; i++)
 		plantaAux->plazas[i]=NULL;
-	
 	plantaAux->nPlazas=nPlazas;
 	return plantaAux;
 }
 void mostrarPlanta(planta_t * plantaAux){
-	
 	int i;
 	for(i = 0; i < plantaAux->nPlazas; i++){
-		if(plantaAux->plazas[i]){
+		if(plantaAux->plazas[i])
             mostrarElem(*plantaAux->plazas[i]);
-        } else {
+        else
             printf("[ ]");
-        }
-	}	
-	
+	}
 }
-
 
 typedef struct parking //nombre estructura
 {
-		int plazasLibres; //Plazas libres
-		planta_t** plantas; //Plantas del parking
-		int nPlantas; //Numero de plantas
-					
+    int plazasLibres; //Plazas libres
+	planta_t** plantas; //Plantas del parking
+	int nPlantas; //Numero de plantas
 } parking_t; //tipo dato estructura
 
-parking_t * crearParking(int nPlazas ,int nPlantas, int nCoches, int nCamiones){
+parking_t * crearParking(int nPlazas ,int nPlantas){
 	
 	int i;
 	parking_t * parkingAux = malloc(sizeof(parking_t));
@@ -158,8 +144,8 @@ void mostrarParking(parking_t parkingAux){
 		mostrarPlanta(parkingAux.plantas[i]);
 		printf("\n");
 	}	
-	
 }
+
 int encontrarPlazaLibre(volatile parking_t * parkingAux, int flag, int * plantaparking, int * plazaparking ){ //1 coche 2 camion
 	
 	int i,j;
@@ -180,13 +166,11 @@ int encontrarPlazaLibre(volatile parking_t * parkingAux, int flag, int * plantap
             return 1;
         }
 	}
-	
 	return 0;
 }
 
 volatile parking_t * aparcamiento;
 volatile cola_t colaEntrada;
-
 
 void mensajeEntrada(elem_t vehiculo, int plaza, int planta){
     if(vehiculo.espacio == 1)
@@ -269,36 +253,36 @@ void * accesoParking(void * elemento){
 }
 int main(int argc, char **argv)
 {
-	int nCoches,nCamiones,nPlantas,nPlazas,i;
+	int nCoches, nCamiones, nPlantas, nPlazas, i;
 	pthread_t** thVehiculo;
     elem_t* vehiculos;
     int* idVehiculo;
-	nPlantas=1;
-	nCamiones=0;
-
+	nPlantas = 1;
+	nCamiones = 0;
+    char* ptrError;
 	switch(argc){ //Filto entrada
 		case 1: fprintf(stderr,"Error: No hay parametros suficientes. \n");
 				exit(1);
 		
-		case 5: nCamiones = atoi(argv[4]);
-				if(nCamiones == 0){
+		case 5: nCamiones = strtol(argv[4], &ptrError, 0);
+				if(ptrError == argv[4] || nCamiones < 0){
 					fprintf(stderr,"Error: No es el formato correcto. \n");
 					exit(1);				
 				}
-		case 4: nCoches = atoi(argv[3]);
-				if(nCoches == 0){
-					fprintf(stderr,"Error: No es el formato correcto. \n");
-					exit(1);				
-				}
-				
-		case 3: nPlantas = atoi(argv[2]);
-				if(nPlantas == 0){
+		case 4: nCoches = strtol(argv[3], &ptrError, 0);
+				if(ptrError == argv[3] || nCoches < 0){
 					fprintf(stderr,"Error: No es el formato correcto. \n");
 					exit(1);				
 				}
 				
-		case 2: nPlazas = atoi(argv[1]);
-				if(nPlazas == 0){
+		case 3: nPlantas = strtol(argv[2], &ptrError, 0);
+				if(ptrError == argv[2] || nPlantas < 0){
+					fprintf(stderr,"Error: No es el formato correcto. \n");
+					exit(1);				
+				}
+				
+		case 2: nPlazas = strtol(argv[1], &ptrError, 0);
+				if(ptrError == argv[1] || nPlazas < 0){
 					fprintf(stderr,"Error: No es el formato correcto. \n");
 					exit(1);				
 				}
@@ -307,10 +291,9 @@ int main(int argc, char **argv)
 				break;
 				
 		default: fprintf(stderr,"Error: Hay mas parametros de los necesarios. \n"); 
-				 exit(1);				
-				
+				 exit(1);
 	}
-	aparcamiento = crearParking(nPlazas,nPlantas,nCoches,nCamiones);
+	aparcamiento = crearParking(nPlazas,nPlantas);
     crearColaVacia(&colaEntrada);
 	//mostrarParking(*aparcamiento);
 	
