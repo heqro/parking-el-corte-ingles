@@ -6,6 +6,7 @@
 pthread_mutex_t mutexAparcamiento;
 pthread_mutex_t mutexCola;
 pthread_cond_t out;
+pthread_cond_t colasig;
 typedef struct elemento
 {
     int espacio; // 1 -> coche; 2 -> camión
@@ -20,7 +21,9 @@ elem_t* crearElem(int espacio, int id){
 }
 
 void asignarElem(elem_t* elem1, elem_t elem2){
-    elem1 = crearElem(elem2.espacio, elem2.id);
+    //elem1 = crearElem(elem2.espacio, elem2.id);
+    elem1->espacio = elem2.espacio;
+    elem1->id = elem2.id;
 }
 
 void mostrarElem(elem_t elem){
@@ -90,6 +93,23 @@ void eliminarCabecera(volatile cola_t* cola){
             cola->primero = cola->primero->sig;
         free(ptrAux);
     }
+}
+void mostrarCola(volatile cola_t colaAux){
+	nodo_t * nodoAux;
+	nodoAux = colaAux.primero;
+	
+	while(nodoAux!=NULL){
+		
+		mostrarElem(nodoAux->elem);
+		printf("\n");
+		nodoAux=nodoAux->sig;
+		fflush(stdout);
+	}
+		
+		printf("---------\n");
+		
+		fflush(stdout);
+	
 }
 
 typedef struct planta //nombre estructura
@@ -197,7 +217,7 @@ void mensajeSalida(elem_t vehiculo){
     if(vehiculo.espacio == 1)
         printf("SALIDA: Coche %i saliendo. ",vehiculo.id);
     else 
-        printf("ENTRADA: Camión %i saliendo. ",vehiculo.id);
+        printf("SALIDA: Camión %i saliendo. ",vehiculo.id);
 }
 
 void * accesoParking(void * elemento){
@@ -210,22 +230,29 @@ void * accesoParking(void * elemento){
         // Insertarnos en la cola de espera
         pthread_mutex_lock(&mutexCola);
         insertar(*vehiculo, &colaEntrada);
+        while(!soyPrimero(*vehiculo, colaEntrada)){
+			pthread_cond_wait(&colasig,&mutexCola);
+		}
+        pthread_mutex_lock(&mutexAparcamiento);
+		
         pthread_mutex_unlock(&mutexCola);
-        while(!soyPrimero(*vehiculo, colaEntrada)){} // esperar el turno
-        
+         // esperar el turno
+      
         // una vez somos primeros, es hora de buscar plaza
-		pthread_mutex_lock(&mutexAparcamiento);
 		while(encontrarPlazaLibre(aparcamiento,vehiculo->espacio,plantaParking,plazaParking)==0){ // mientras no encontremos plaza
             // esperar a que salga gente y preguntar de nuevo si hay espacio
             pthread_cond_wait(&out,&mutexAparcamiento);
 		} // Si salimos de este bucle, hemos conseguido sitio
 		// Como hemos asegurado un lugar, podemos abandonar la cola
+		
 		pthread_mutex_lock(&mutexCola);
+        mostrarCola(colaEntrada);
         eliminarCabecera(&colaEntrada);
+		pthread_cond_signal(&colasig);
         pthread_mutex_unlock(&mutexCola);
-        
         // mostrar el mensaje pedido en el enunciado
         mensajeEntrada(*vehiculo, *plazaParking, *plantaParking);
+        fflush(stdout);
         // ocupar nuestra plaza en el aparcamiento
 		aparcamiento->plantas[*plantaParking]->plazas[*plazaParking] = vehiculo;
         if(vehiculo->espacio == 2){
@@ -238,6 +265,7 @@ void * accesoParking(void * elemento){
 		printf("Plazas libres: %i\n", aparcamiento->plazasLibres);
         // mostramos parking una vez lo hemos modificado
 		mostrarParking(*aparcamiento);
+		fflush(stdout);
         // hemos acabado todas las tareas de modificación del parking
 		pthread_mutex_unlock(&mutexAparcamiento);
 		
@@ -310,12 +338,14 @@ int main(int argc, char **argv)
 	}
 	aparcamiento = crearParking(nPlazas,nPlantas,nCoches,nCamiones);
     crearColaVacia(&colaEntrada);
+    mostrarCola(colaEntrada);
 	//mostrarParking(*aparcamiento);
 	
 	//mutex
 	pthread_mutex_init(&mutexAparcamiento,NULL);
     pthread_mutex_init(&mutexCola,NULL);
 	pthread_cond_init(&out,NULL);
+	pthread_cond_init(&colasig,NULL);
 	
 	// threads
     vehiculos = malloc((nCamiones+nCoches)*sizeof(elem_t));
@@ -335,6 +365,7 @@ int main(int argc, char **argv)
 	while(1){
 		sleep(10);
 	}
+	
 	return 0;
 }
 
