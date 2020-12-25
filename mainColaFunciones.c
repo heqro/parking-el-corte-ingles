@@ -191,7 +191,7 @@ void mensajeEntrada(elem_t vehiculo, int plaza, int planta){
     if(vehiculo.espacio == 1)
         printf("ENTRADA: Coche %i aparca en planta %i y plaza %i. ",vehiculo.id,planta, plaza);
     else
-        printf("ENTRADA: Camión %i aparca en planta %i y plazas %i e %i. ",vehiculo.id,planta, plaza, plaza+1);
+        printf("ENTRADA: Camión %i aparca en planta %i y plazas %i y %i. ",vehiculo.id,planta, plaza, plaza+1);
 }
 
 void mensajeSalida(elem_t vehiculo){
