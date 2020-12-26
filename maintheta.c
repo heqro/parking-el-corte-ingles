@@ -280,13 +280,13 @@ int main(int argc, char **argv)
 				}
 				
 		case 3: nPlantas = strtol(argv[2], &ptrError, 0);
-				if(*ptrError != '\0' || nPlantas < 0){
+				if(*ptrError != '\0' || nPlantas <= 0){
 					fprintf(stderr,"Error: No es el formato correcto. \n");
 					exit(1);				
 				}
 				
 		case 2: nPlazas = strtol(argv[1], &ptrError, 0);
-				if(*ptrError != '\0' || nPlazas < 0){
+				if(*ptrError != '\0' || nPlazas <= 0){
 					fprintf(stderr,"Error: No es el formato correcto. \n");
 					exit(1);
 				}
