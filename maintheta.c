@@ -264,7 +264,7 @@ int main(int argc, char **argv)
 	nPlantas = 1;
 	nCamiones = 0;
     char* ptrError;
-	switch(argc){ //Filto entrada
+	switch(argc){ //Filtro entrada
 		case 1: fprintf(stderr,"Error: No hay parametros suficientes. \n");
 				exit(2);
 		
