@@ -194,26 +194,26 @@ void * accesoParking(void * elemento){
     while(1){
         // Vehículo espera antes de tener la idea de entrar al aparcamiento
 		sleep(rand() % 10 + 1);
-        // Insertarnos en la cola de espera
+        // Insertarnos en la cola de espera (inicio sección crítica de entrada a la cola)
         pthread_mutex_lock(&mutexCola);
         insertar(*vehiculo, &colaEntrada);
         while(!soyPrimero(*vehiculo, colaEntrada)){ 
             pthread_cond_wait(&outCola,&mutexCola);
             // esperar nuestro turno
         }
-        pthread_mutex_unlock(&mutexCola);
+        pthread_mutex_unlock(&mutexCola); // (final de sección crítica de entrada a la cola)
         
-        // una vez somos primeros, es hora de buscar plaza
+        // una vez somos primeros, es hora de buscar plaza (inicio sección crítica de entrada al aparcamiento)
 		pthread_mutex_lock(&mutexAparcamiento);
 		while(encontrarPlazaLibre(aparcamiento,vehiculo->espacio,plantaParking,plazaParking)==0){ // mientras no encontremos plaza
             // esperar a que salga gente y preguntar de nuevo si hay espacio
             pthread_cond_wait(&out,&mutexAparcamiento);
 		} // Si salimos de este bucle, hemos conseguido sitio
 		// Como hemos asegurado un lugar, podemos abandonar la cola
-        pthread_mutex_lock(&mutexCola);
+        pthread_mutex_lock(&mutexCola); // (inicio sección crítica de salida de la cola)
         eliminarCabecera(&colaEntrada);
         pthread_cond_broadcast(&outCola);
-        pthread_mutex_unlock(&mutexCola);
+        pthread_mutex_unlock(&mutexCola); // (final sección crítica de salida de la cola)
         
         // mostrar el mensaje pedido en el enunciado
         mensajeEntrada(*vehiculo, *plazaParking, *plantaParking);
@@ -229,13 +229,13 @@ void * accesoParking(void * elemento){
 		printf("Plazas libres: %i\n", aparcamiento->plazasLibres);
         // mostramos parking una vez lo hemos modificado
 		mostrarParking(*aparcamiento);
-        // hemos acabado todas las tareas de modificación del parking
+        // hemos acabado todas las tareas de modificación del parking (final sección crítica de entrada al parking)
 		pthread_mutex_unlock(&mutexAparcamiento);
 		
         // esperar tiempo aleatorio dentro del parking
 		sleep(rand() % 10 + 1);
 		
-        // una vez se quiera salir, tomar control del mutex del aparcamiento
+        // una vez se quiera salir, tomar control del mutex del aparcamiento (inicio sección crítica de salida del parking)
 		pthread_mutex_lock(&mutexAparcamiento);
         // desocupar plaza
 		aparcamiento->plantas[*plantaParking]->plazas[*plazaParking] = NULL;
@@ -251,7 +251,7 @@ void * accesoParking(void * elemento){
 		printf("Plazas libres: %i\n", aparcamiento->plazasLibres);
         // señalar que un vehículo ha abandonado el aparcamiento
 		pthread_cond_signal(&out);
-        // una vez hemos realizado nuestras tareas, abandonamos el control del mutex
+        // una vez hemos realizado nuestras tareas, abandonamos el control del mutex (final sección crítica salida del parking)
 		pthread_mutex_unlock(&mutexAparcamiento);
 	}
 }
